@@ -1,5 +1,5 @@
 use std::fs::{self, DirEntry, metadata};
-use tauri::utils::mime_type;
+use tauri::{http::status, utils::mime_type};
 
 #[tauri::command]
 pub fn get_home_directory() -> String {
@@ -125,7 +125,7 @@ pub fn list_files(path: String, sort_method: String) -> (i32, Vec<String>) {
 pub fn list_symlinks(path: String, sort_method: String) -> (i32, Vec<String>) {
     let mut unsorted_list: Vec<DirEntry> = Vec::new();
     for entry in fs::read_dir(path).unwrap().flatten() {
-        if entry.metadata().unwrap().is_file() {
+        if entry.metadata().unwrap().is_symlink() {
             unsorted_list.push(entry);
         }
     }
@@ -606,7 +606,6 @@ pub const MIME_ICONS: &[(&str, &str)] = &[
 // total: 466 entries
 
 pub fn cvt_mimetype_iconfilename(mimetype: String) -> String {
-    println!("{mimetype}");
     let mime_icons_path = "assets/mimetypes/";
     let relative_icon_path = "../src/assets/mimetypes/";
     let icon_extension = ".svg";
@@ -624,14 +623,16 @@ pub fn cvt_mimetype_iconfilename(mimetype: String) -> String {
 }
 
 #[tauri::command]
-pub fn ls_dir(path: String, sort_method: String, sort_method_dfs: String) -> (Vec<String>, Vec<String>) {
+pub fn ls_dir(path: String, sort_method: String, sort_method_dfs: String) -> (Vec<String>, Vec<String>, Vec<String>) {
     // first : get all the files
+    let mut status_list = Vec::new();
     let mut file_list = list_files(path.clone(), sort_method.clone()).1;
     let mut list_icons_files: Vec<String> = Vec::new();
     for file in &file_list {
         let full_path = format!("{}{}", &path, &file);
         let mime: &str = tree_magic_mini::from_filepath(std::path::Path::new(&full_path)).unwrap_or("");
         list_icons_files.push(cvt_mimetype_iconfilename(mime.to_string()));
+        status_list.push("f".to_string());
     }
     // second : the symlinks now
     let mut symlink_list = list_symlinks(path.clone(), sort_method.clone()).1;
@@ -640,20 +641,22 @@ pub fn ls_dir(path: String, sort_method: String, sort_method_dfs: String) -> (Ve
         let full_path = format!("{}{}", &path, &symlink);
         let mime: &str = tree_magic_mini::from_filepath(std::path::Path::new(&full_path)).unwrap_or("");
         list_icons_symlinks.push(cvt_mimetype_iconfilename(mime.to_string()));
+        status_list.push("s".to_string());
     }
     // third : the directories now
     let mut dir_list = list_folders(path.clone(), sort_method.clone()).1;
     let mut list_icons_dir: Vec<String> = Vec::new();
     for dir in &dir_list {
         list_icons_dir.push("assets/places/folder.svg".to_string());
+        status_list.push("d".to_string());
     }
     let mut merged_file_list = Vec::new();
     merged_file_list.append(&mut file_list);
     merged_file_list.append(&mut dir_list);
     merged_file_list.append(&mut symlink_list);
-    let merged_icon_list = Vec::new();
-    merged_file_list.append(&mut list_icons_files);
-    merged_file_list.append(&mut list_icons_dir);
-    merged_file_list.append(&mut list_icons_symlinks);
-    (merged_file_list, merged_icon_list)
+    let mut merged_icon_list = Vec::new();
+    merged_icon_list.append(&mut list_icons_files);
+    merged_icon_list.append(&mut list_icons_dir);
+    merged_icon_list.append(&mut list_icons_symlinks);
+    (merged_file_list, merged_icon_list, status_list)
 }

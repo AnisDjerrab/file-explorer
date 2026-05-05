@@ -1,22 +1,29 @@
 :root {
   --bg: #ffffff;
   --text: #111111;
-  --panel: #f2f2f2;
-  --accent: #7caeff;
+  --panel: rgb(242, 242, 242);
+  --panel-50: rgba(242, 242, 242, 0.5);
+  --accent: rgb(143, 185, 251);
   --invert: 0;
+  --scheme: light;
 }
 
 :root {
   --bg: #111111;
   --text: #ffffff;
-  --panel: #1e1e1e;
-  --accent: #7caeff;
+  --panel: rgb(30, 30, 30);
+  --panel-50: rgba(30, 30, 30, 0.5);
+  --accent: rgb(143, 185, 251);
   --invert: 1;
+  --scheme: dark;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  overflow-y: hidden;
+  color-scheme: var(--scheme);
 }
 
 .top_bar {
@@ -94,39 +101,54 @@ body {
 .file_icons_grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 80px);
-  gap: 12px;
+  justify-content: space-between;
   padding: 12px;
-}
-
-.file_icon {
-  width: 80px;
-  height: 90px;
-  box-sizing: border-box;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border-radius: 10px;
-  padding: 4px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .file_icon img {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
   width: 50px;
   height: 50px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.file_icon span {
+.file_icon {
+  width: 80px;
+  height: 92px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.file_icon.selected {
+  background-color: var(--panel);
+}
+
+.file_icon:hover:not(.selected) {
+  background-color: var(--panel-50);
+}
+
+.file_icon div {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
   width: 100%;
   max-width: 100%;
-  font-size: 11px;
+  min-width: 0;
+  display: block;
+  font-size: 12px;
   text-align: center;
   margin-top: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
 }
 
 .path_area {
@@ -137,12 +159,18 @@ body {
   outline: none;
   border: none;
   min-width: 0;
+  width: 0;
   flex: 1;
   font-weight: 500;
 }
 
+.path_area:focus {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
 button {
   background: var(--panel);
+  color: var(--text);
   border-radius: 8px;
   padding: 6px 10px;
   outline: none;
@@ -151,4 +179,5 @@ button {
 
 .svg {
   filter: invert(var(--invert));
+  height: 12px;
 }
