@@ -31,3 +31,4 @@ document.addEventListener("click", (e) => {
 document.querySelector(".path").textContent = "hello world"
 // now, communicate with rust to get the 'home' path
 invoke('get_home_directory').then((home_dir) => document.querySelector(".path").textContent = home_dir);
+// try to communicate with rust to get the files in home

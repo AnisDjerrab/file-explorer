@@ -5,8 +5,7 @@ mod file_operations;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![file_operations::get_home_directory])
+        .invoke_handler(tauri::generate_handler![file_operations::get_home_directory, file_operations::ls_dir])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
