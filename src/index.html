@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>File Explorer</title>
+    <script type="module" src="./main.js" defer></script>
+  </head>
+
+  <body>
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <header class="top_bar">
+          <div>
+            <button class="back">
+              <img src="assets/actions/go-previous-symbolic.svg">
+            </button>
+            <button class="next">
+              <img src="assets/actions/go-next-symbolic.svg">
+            </button>
+          </div>
+          <div class="path"></div>
+          <form role="search" class="search_area">
+            <input type="search" name="q" placeholder="Search...">
+            <button type="submit">Search</button>
+          </form>
+        </header>
+      </main>
+  </body>
+</html>
