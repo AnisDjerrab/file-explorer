@@ -3,6 +3,7 @@
   --text: #111111;
   --panel: #f2f2f2;
   --accent: #7caeff;
+  --invert: 0;
 }
 
 :root {
@@ -10,6 +11,7 @@
   --text: #ffffff;
   --panel: #1e1e1e;
   --accent: #7caeff;
+  --invert: 1;
 }
 
 body {
@@ -25,6 +27,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   top: 0;
   left: 0;
   background: var(--bg);
@@ -41,12 +44,20 @@ body {
 }
 
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+
   width: 250px;
+  height: 100vh;
+
   background: var(--panel);
+  z-index: 1000; 
 }
 
 .main {
-  flex: 1;       
+  margin-left: 250px;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
@@ -57,19 +68,87 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-
     height: 100%;
     width: 250px;
-
     transform: translateX(-100%);
-    transition: transform 0.2s ease;
-
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 1000;
+  }
+  .main {
+    margin-left: 0;
+    transition: 
+      filter 0.35s ease,
+      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .sidebar.open ~ .main {
+    transform: translateX(20px);
   }
   .sidebar.open {
     transform: translateX(0);
   }
   .main.dim {
-    filter: brightness(0.6);
+    filter: brightness(0.8);
   }
+}
+
+.file_icons_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 80px);
+  gap: 12px;
+  padding: 12px;
+}
+
+.file_icon {
+  width: 80px;
+  height: 90px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.file_icon img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.file_icon span {
+  width: 100%;
+  max-width: 100%;
+  font-size: 11px;
+  text-align: center;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.path_area {
+  background: var(--panel);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 6px 10px;
+  outline: none;
+  border: none;
+  min-width: 0;
+  flex: 1;
+  font-weight: 500;
+}
+
+button {
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 6px 10px;
+  outline: none;
+  border: none;
+}
+
+.svg {
+  filter: invert(var(--invert));
 }
