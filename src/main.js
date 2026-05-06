@@ -3,6 +3,7 @@ const invoke = window.__TAURI__.core.invoke;
 // this code creates the behavior with the hiding side bar
 const sidebar = document.querySelector(".sidebar");
 const main = document.querySelector(".main");
+const file_grid = document.querySelector(".file_icons_grid");
 
 function openSidebar() {
   sidebar.classList.add("open");
@@ -44,7 +45,6 @@ function changePath(newPath) {
  // try to communicate with rust to get the files in home
   invoke('ls_dir', {path : newPath + "/", sortMethod : "A-Z", sortMethodDfs : "dfs"}).then((output) => {
     // get the file grid element
-    const file_grid = document.querySelector(".file_icons_grid");
     let new_items = [];
     for (let i = 0; i < output[0].length; i++) {
       const file_icon = document.createElement("div");
@@ -55,19 +55,14 @@ function changePath(newPath) {
       icon_content.textContent = output[0][i];
       new_items.push(file_icon);
       file_icon.addEventListener("click", (e) => {
-        if (e.currentTarget.classList.contains("selected")) {
-          e.currentTarget.classList.remove("selected");
-          file_grid_content.selected_elements.remove(e.currentTarget);
-        } else {
-          if (!e.ctrlKey && !e.metaKey) {
-            for (let i = 0; i < file_grid_content.selected_elements.length; i++) {
-              file_grid_content.selected_elements[i].classList.remove("selected");
-            }
-            file_grid_content.selected_elements = [];
-          } 
-          file_grid_content.selected_elements.push(e.currentTarget);
-          e.currentTarget.classList.add("selected");
-        }
+        if (!e.ctrlKey && !e.metaKey) {
+          for (let i = 0; i < file_grid_content.selected_elements.length; i++) {
+            file_grid_content.selected_elements[i].classList.remove("selected");
+          }
+          file_grid_content.selected_elements = [];
+        } 
+        file_grid_content.selected_elements.push(e.currentTarget);
+        e.currentTarget.classList.add("selected");
       });
       file_icon.addEventListener("contextmenu", (e) => {
         if (!e.currentTarget.classList.contains("selected")) {
@@ -94,26 +89,28 @@ let initial_click_zone = {
 }
 
 // get an initial click
-document.addEventListener("mousedown", (e) => {
+file_grid.addEventListener("mousedown", (e) => {
   initial_click_zone.pos_x = e.clientX;
   initial_click_zone.pos_y = e.clientY;
-  if (in_mouse_sel) {
-    in_mouse_sel = false;
-    const box = document.getElementById("selection-box");
-    const new_box = document.createElement("div");
-    new_box.id = "selection-box";
-    box.replaceWith(new_box);
-  } 
+  const box = document.getElementById("selection-box");
+  const new_box = document.createElement("div");
+  new_box.id = "selection-box";
+  box.replaceWith(new_box);
 });
 
 // get the click release, and conclude if it was an area selection or not
-document.addEventListener("mousemove", (e) => {
+file_grid.addEventListener("mousemove", (e) => {
   if (initial_click_zone.pos_x != e.clientX && initial_click_zone.pos_y != e.clientY && e.buttons === 1) {
     const box = document.getElementById("selection-box");
-    let position_x = Math.min(initial_click_zone.pos_x, e.clientX);
-    let position_y = Math.min(initial_click_zone.pos_y, e.clientY);
-    let end_x = Math.max(initial_click_zone.pos_x, e.clientX);
-    let end_y = Math.max(initial_click_zone.pos_y, e.clientY);
+     const gridRect = file_grid.getBoundingClientRect();
+    let startX = initial_click_zone.pos_x - gridRect.left;
+    let startY = initial_click_zone.pos_y - gridRect.top;
+    let currentX = e.clientX - gridRect.left;
+    let currentY = e.clientY - gridRect.top;
+    let position_x = Math.min(startX, currentX);
+    let position_y = Math.min(startY, currentY);
+    let end_x = Math.max(startX, currentX);
+    let end_y = Math.max(startY, currentY);
     box.style.left = position_x + "px";
     box.style.top = position_y + "px";
     box.style.width = Math.abs(position_x - end_x) + "px";
@@ -136,3 +133,12 @@ document.addEventListener("mousemove", (e) => {
   }
 });
 
+// if the user clicks on the bare file grid => deselect all
+file_grid.addEventListener("mouseup", (e) => {
+  if (e.target === file_grid || e.target.classList.contains("file_icons_grid") && in_mouse_sel == false) {
+    for (let i = 0; i < file_grid_content.selected_elements.length; i++) {
+      file_grid_content.selected_elements[i].classList.remove("selected");
+    }
+    file_grid_content.selected_elements = [];
+  }
+});
