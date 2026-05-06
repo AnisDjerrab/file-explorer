@@ -5,6 +5,8 @@ const sidebar = document.querySelector(".sidebar");
 const main = document.querySelector(".main");
 const file_grid = document.querySelector(".file_icons_grid");
 
+let currentPath = "";
+
 function openSidebar() {
   sidebar.classList.add("open");
   main.classList.add("dim");
@@ -38,10 +40,14 @@ const file_grid_content = {
 }
 
 // now, communicate with rust to get the 'home' path
-invoke('get_home_directory').then((home_dir) => changePath(home_dir));
+invoke('get_home_directory').then((home_dir) => {
+  changePath(home_dir);
+  currentPath = home_dir;
+});
 
 function changePath(newPath) {
-  document.querySelector(".path_area").value = newPath + "/"
+  document.querySelector(".path_area").value = newPath + "/";
+  file_grid.replaceChildren();
  // try to communicate with rust to get the files in home
   invoke('ls_dir', {path : newPath + "/", sortMethod : "A-Z", sortMethodDfs : "dfs"}).then((output) => {
     // get the file grid element
@@ -64,6 +70,16 @@ function changePath(newPath) {
         file_grid_content.selected_elements.push(e.currentTarget);
         e.currentTarget.classList.add("selected");
       });
+      file_icon.addEventListener("dblclick", async (e) => {
+        if (output[0][ output[0].length * 2 / 3 + i] == "f" || output[0][ output[0].length * 2 / 3 + i] == "s") {
+          let full_path = newPath + "/" + output[0][i] ;
+          invoke("open_file_with_default_app", { path :full_path });
+        } else {
+          currentPath = newPath + "/" + output[0][i];
+          console.log(currentPath);
+          changePath(currentPath);
+        }
+      })
       file_icon.addEventListener("contextmenu", (e) => {
         if (!e.currentTarget.classList.contains("selected")) {
           e.preventDefault();
@@ -79,6 +95,7 @@ function changePath(newPath) {
     file_grid_content.files_icons_paths = output[1];
     file_grid_content.files_status = output[2];
     file_grid_content.files_divs = new_items;
+    file_grid_content.selected_elements = [];
   });
 }
 
