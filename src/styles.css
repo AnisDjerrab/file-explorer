@@ -4,6 +4,8 @@
   --panel: rgb(242, 242, 242);
   --panel-50: rgba(242, 242, 242, 0.5);
   --accent: rgb(143, 185, 251);
+  --accent-50: rgba(143, 185, 251, 0.5);
+  --accent-30: rgba(143, 185, 251, 0.3);
   --invert: 0;
   --scheme: light;
 }
@@ -14,6 +16,8 @@
   --panel: rgb(30, 30, 30);
   --panel-50: rgba(30, 30, 30, 0.5);
   --accent: rgb(143, 185, 251);
+  --accent-50: rgba(143, 185, 251, 0.5);
+  --accent-30: rgba(143, 185, 251, 0.3);
   --invert: 1;
   --scheme: dark;
 }
@@ -99,7 +103,9 @@ body {
 }
 
 .file_icons_grid {
+  position: relative;
   display: grid;
+  row-gap: 18px;
   grid-template-columns: repeat(auto-fill, 80px);
   justify-content: space-between;
   padding: 12px;
@@ -180,4 +186,17 @@ button {
 .svg {
   filter: invert(var(--invert));
   height: 12px;
+}
+
+::selection {
+  background: var(--accent-50);
+}
+
+#selection-box {
+  position: absolute;
+  border: 2px solid var(--accent);
+  background: var(--accent-30);
+  pointer-events: none;
+  display: none;
+  border-radius: 8px;
 }
