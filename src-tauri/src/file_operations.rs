@@ -1,14 +1,19 @@
-use std::fs::{self, DirEntry, metadata};
-use tauri::{http::status, utils::mime_type};
+use std::fs::{self, DirEntry};
+use etcetera::{choose_base_strategy, BaseStrategy};
 
 #[tauri::command]
 pub fn get_home_directory() -> String {
-    if let Some(home) = dirs::home_dir() {
-        let output = home.to_string_lossy().into_owned();
-        output
-    } else {
-        let output = "Err: home dir not found.".to_string();
-        output
+    // this works on linux, windows, macos and iOS, but not on android. we unfortunately have to hard code the home adress on android
+    #[cfg(not(target_os = "android"))]
+    match choose_base_strategy() {
+        Ok(strategy) => strategy.home_dir().to_string_lossy().into_owned(),
+        Err(_) => "Err: invalid path.".to_string()
+    }
+"/data/data/com.anis.file_explorer"
+    #[cfg(target_os = "android")]
+    {
+        std::fs::create_dir_all("/data/data/com.anis.file_explorer/vFS");
+        "/data/data/com.anis.file_explorer/vFS".to_string()
     }
 }
 
@@ -77,7 +82,7 @@ fn sort(unsorted_list: &mut Vec<DirEntry>, sort_method: String) -> Vec<String> {
         sorted_list
     } else if sort_method=="extension" {
         unsorted_list.sort_by(|a, b| {
-            if (a.metadata().unwrap().is_dir() || a.metadata().unwrap().is_symlink() && b.metadata().unwrap().is_dir() || b.metadata().unwrap().is_symlink()) {
+            if a.metadata().unwrap().is_dir() || a.metadata().unwrap().is_symlink() && b.metadata().unwrap().is_dir() || b.metadata().unwrap().is_symlink() {
                 let a_tmp = a.path();
                 let b_tmp = b.path();
                 let a_name = a.file_name().to_string_lossy().into_owned();
@@ -102,8 +107,12 @@ fn sort(unsorted_list: &mut Vec<DirEntry>, sort_method: String) -> Vec<String> {
 #[tauri::command]
 pub fn list_folders(path: String, sort_method: String) -> (i32, Vec<String>) {
     let mut unsorted_list: Vec<DirEntry> = Vec::new();
-    for entry in fs::read_dir(path).unwrap().flatten() {
-        if entry.metadata().unwrap().is_dir() {
+    for entry in fs::read_dir(path).into_iter().flatten() {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(_) => continue,  
+        };
+        if entry.metadata().map(|m| m.is_dir()).unwrap_or(false) {
             unsorted_list.push(entry);
         }
     }
@@ -113,8 +122,12 @@ pub fn list_folders(path: String, sort_method: String) -> (i32, Vec<String>) {
 
 pub fn list_files(path: String, sort_method: String) -> (i32, Vec<String>) {
     let mut unsorted_list: Vec<DirEntry> = Vec::new();
-    for entry in fs::read_dir(path).unwrap().flatten() {
-        if entry.metadata().unwrap().is_file() {
+    for entry in fs::read_dir(path).into_iter().flatten() {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(_) => continue,  
+        };
+        if entry.metadata().map(|m| m.is_file()).unwrap_or(false) {
             unsorted_list.push(entry);
         }
     }
@@ -124,8 +137,12 @@ pub fn list_files(path: String, sort_method: String) -> (i32, Vec<String>) {
 
 pub fn list_symlinks(path: String, sort_method: String) -> (i32, Vec<String>) {
     let mut unsorted_list: Vec<DirEntry> = Vec::new();
-    for entry in fs::read_dir(path).unwrap().flatten() {
-        if entry.metadata().unwrap().is_symlink() {
+    for entry in fs::read_dir(path).into_iter().flatten() {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(_) => continue,  
+        };
+        if entry.metadata().map(|m| m.is_symlink()).unwrap_or(false) {
             unsorted_list.push(entry);
         }
     }
