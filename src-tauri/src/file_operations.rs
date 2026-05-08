@@ -9,7 +9,6 @@ pub fn get_home_directory() -> String {
         Ok(strategy) => strategy.home_dir().to_string_lossy().into_owned(),
         Err(_) => "Err: invalid path.".to_string()
     }
-"/data/data/com.anis.file_explorer"
     #[cfg(target_os = "android")]
     {
         std::fs::create_dir_all("/data/data/com.anis.file_explorer/vFS");

@@ -85,7 +85,7 @@ body {
     top: 0;
     left: 0;
     height: 100%;
-    width: 250px;
+    width: min(250px, 33%);
     transform: translateX(-100%);
     transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 1000;
@@ -183,14 +183,18 @@ button {
   background: var(--panel);
   color: var(--text);
   border-radius: 8px;
-  padding: 6px 10px;
   outline: none;
   border: none;
+  padding: 6px 10px;
+}
+
+button:active {
+  background: var(--bg);
 }
 
 .svg {
   filter: invert(var(--invert));
-  height: 12px;
+  height: 16px;
 }
 
 ::selection {
@@ -204,4 +208,46 @@ button {
   pointer-events: none;
   display: none;
   border-radius: 8px;
+}
+
+.middle_area {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.divided_path_area {
+  background-color: var(--panel);
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  color: var(--text);
+  outline: none;
+  border: none;
+  font-weight: 500;
+  flex: 1;
+  padding: none;
+}
+
+#right_divided_path_area_button {
+  margin-left: auto;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  border-left: 1px solid var(--bg);
+}
+
+#left_divided_path_area_button {
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+  border-right: 1px solid var(--bg);
+}
+
+#middle_area_elements {
+  all: unset;
+  display: none;
+}
+
+.path_section {
+  border-radius: 0px;
+  border-right: 1px solid var(--bg);
 }
