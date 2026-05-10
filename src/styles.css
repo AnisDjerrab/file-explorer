@@ -124,6 +124,7 @@ body {
     grid-template-columns: repeat(auto-fill, 80px);
     row-gap: 18px;
     justify-content: space-between;
+    align-content: start;
     padding: 12px;
     overflow-y: auto;
     scrollbar-gutter: stable;

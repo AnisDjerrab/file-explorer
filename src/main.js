@@ -17,6 +17,7 @@ let list_index = 0;
 let OS_icon_path = "";
 let Operating_System = "";
 let OS_type = "";
+let split_token = "/"; // => by default, unix.
 
 function openSidebar() {
   sidebar.classList.add("open");
@@ -54,6 +55,7 @@ const file_grid_content = {
 invoke("get_operating_system").then((OS_name_and_distro) => {
   Operating_System = OS_name_and_distro[0];
   OS_type = OS_name_and_distro[2];
+  console.log(OS_name_and_distro);
   if (OS_name_and_distro[0] != "linux") {
     switch (OS_name_and_distro[0]) {
       case "windows":
@@ -181,17 +183,22 @@ invoke("get_operating_system").then((OS_name_and_distro) => {
         OS_icon_path = "assets/icons/tux.svg";
     }
   }
-});
-
-// now, communicate with rust to get the 'home' path
-invoke("get_home_directory").then((home_dir) => {
-  changePath(home_dir);
-  currentPath = home_dir;
+  // decide which separator no use according to if it is a POSIX-compliant system on a windows NT one
+  if (OS_type == "windows") {
+    split_token = "\\";
+  } else if (OS_type == "unix") {
+    split_token = "/";
+  }
+  // now, communicate with rust to get the 'home' path
+  invoke("get_home_directory").then((home_dir) => {
+    changePath(home_dir);
+    currentPath = home_dir;
+  });
 });
 
 function changePath(newPath) {
   if (newPath != "Err : invalid path.") {
-    document.querySelector(".path_area").value = newPath + "/";
+    document.querySelector(".path_area").value = newPath + split_token;
     if (list_index >= path_undo_redo_list.length) {
       path_undo_redo_list.push(newPath);
     } else {
@@ -199,28 +206,44 @@ function changePath(newPath) {
     }
     file_grid.replaceChildren();
     file_grid.appendChild(selection_box);
-    let divided_path = newPath.split("/");
+    let divided_path = newPath.split(split_token);
     path_section_elements.replaceChildren();
     path_section_elements.appendChild(left_scroll);
+    let current_assembled_path = "";
     {
       const path_sec = document.createElement("button");
       path_sec.className = "path_section";
       const sys_svg_img = document.createElement("img");
       sys_svg_img.className = "svg";
       sys_svg_img.src = OS_icon_path;
+      current_assembled_path = divided_path[0];
+      path_sec.dataset.path = current_assembled_path;
       path_sec.appendChild(sys_svg_img);
       path_section_elements.appendChild(path_sec);
+      path_sec.addEventListener("click", (e) => {
+        list_index++;
+        path_undo_redo_list.length = list_index;
+        changePath(e.currentTarget.dataset.path);
+      });
     }
     for (let i = 1; i < divided_path.length; i++) {
+      current_assembled_path += split_token;
+      current_assembled_path += divided_path[i];
       const path_sec = document.createElement("button");
       path_sec.textContent = divided_path[i];
       path_sec.className = "path_section";
+      path_sec.dataset.path = current_assembled_path;
       path_section_elements.appendChild(path_sec);
+      path_sec.addEventListener("click", (e) => {
+        list_index++;
+        path_undo_redo_list.length = list_index;
+        changePath(e.currentTarget.dataset.path);
+      });
     }
     path_section_elements.appendChild(right_scroll);
     // try to communicate with rust to get the files in home
     invoke("ls_dir", {
-      path: newPath + "/",
+      path: newPath + split_token,
       sortMethod: "A-Z",
       sortMethodDfs: "dfs",
     }).then((output) => {
@@ -252,10 +275,10 @@ function changePath(newPath) {
         });
         file_icon.addEventListener("dblclick", async (e) => {
           if (output[2][i] == "f" || output[2][i] == "s") {
-            let full_path = newPath + "/" + output[0][i];
+            let full_path = newPath + split_token + output[0][i];
             invoke("open_file_with_default_app", { path: full_path });
           } else {
-            currentPath = newPath + "/" + output[0][i];
+            currentPath = newPath + split_token + output[0][i];
             list_index++;
             path_undo_redo_list.length = list_index;
             changePath(currentPath);
