@@ -14,6 +14,7 @@ const left_scroll = document.getElementById("left_divided_path_area_button");
 let currentPath = "";
 let path_undo_redo_list = [];
 let list_index = 0;
+let OS_icon_path = "";
 
 function openSidebar() {
   sidebar.classList.add("open");
@@ -47,6 +48,138 @@ const file_grid_content = {
   selected_elements: [],
 };
 
+// get the OS name for future icon selection
+invoke("get_operating_system").then((OS_name_and_distro) => {
+  console.log(OS_name_and_distro[1]);
+  if (OS_name_and_distro[0] != "linux") {
+    switch (OS_name_and_distro[0]) {
+      case "windows":
+        OS_icon_path = "assets/icons/windows.svg";
+        break;
+      case "macos":
+      case "ios":
+        OS_icon_path = "assets/icons/apple.svg";
+        break;
+      case "android":
+        OS_icon_path = "assets/icons/android.svg";
+        break;
+      default:
+        OS_icon_path = "assets/icons/computer.svg";
+    }
+  } else {
+    switch (OS_name_and_distro[1]) {
+      case "Ubuntu":
+        OS_icon_path = "assets/icons/ubuntu.svg";
+        break;
+      case "DebianGNU/Linux":
+        OS_icon_path = "assets/icons/debian.svg";
+        break;
+      case "FedoraLinux":
+        OS_icon_path = "assets/icons/fedora.svg";
+        break;
+      case "ArchLinux":
+        OS_icon_path = "assets/icons/archlinux.svg";
+        break;
+      case "ManjaroLinux":
+        OS_icon_path = "assets/icons/manjaro.svg";
+        break;
+      case "LinuxMint":
+        OS_icon_path = "assets/icons/linuxmint.svg";
+        break;
+      case "Pop!_OS":
+        OS_icon_path = "assets/icons/pop-os.svg";
+        break;
+      case "elementaryOS":
+        OS_icon_path = "assets/icons/elementary.svg";
+        break;
+      case "KDEneon":
+        OS_icon_path = "assets/icons/kde-neon.svg";
+        break;
+      case "openSUSELeap":
+      case "openSUSETumbleweed":
+        OS_icon_path = "assets/icons/opensuse.svg";
+        break;
+      case "CentOSStream":
+        OS_icon_path = "assets/icons/centos.svg";
+        break;
+      case "AlmaLinux":
+        OS_icon_path = "assets/icons/almalinux.svg";
+        break;
+      case "RockyLinux":
+        OS_icon_path = "assets/icons/rocky-linux.svg";
+        break;
+      case "RedHatEnterpriseLinux":
+        OS_icon_path = "assets/icons/redhat.svg";
+        break;
+      case "KaliGNU/Linux":
+        OS_icon_path = "assets/icons/kali-linux.svg";
+        break;
+      case "ParrotGNU/Linux":
+        OS_icon_path = "assets/icons/parrot.svg";
+        break;
+      case "GarudaLinux":
+        OS_icon_path = "assets/icons/garuda.svg";
+        break;
+      case "EndeavourOS":
+        OS_icon_path = "assets/icons/endeavour.svg";
+        break;
+      case "VoidLinux":
+        OS_icon_path = "assets/icons/void.svg";
+        break;
+      case "ZorinOS":
+        OS_icon_path = "assets/icons/zorin.svg";
+        break;
+      case "Gentoo":
+        OS_icon_path = "assets/icons/gentoo.svg";
+        break;
+      case "Slackware":
+        OS_icon_path = "assets/icons/slackware.svg";
+        break;
+      case "AlpineLinux":
+        OS_icon_path = "assets/icons/alpine.svg";
+        break;
+      case "NixOS":
+        OS_icon_path = "assets/icons/nixos.svg";
+        break;
+      case "Solus":
+        OS_icon_path = "assets/icons/solus.svg";
+        break;
+      case "MXLinux":
+        OS_icon_path = "assets/icons/mxlinux.svg";
+        break;
+      case "UbuntuBudgie":
+        OS_icon_path = "assets/icons/budgie.svg";
+        break;
+      case "RaspberryPiOS":
+        OS_icon_path = "assets/icons/rasberry-pi.svg";
+        break;
+      case "Tails":
+        OS_icon_path = "assets/icons/tails.svg";
+        break;
+      case "QubesOS":
+        OS_icon_path = "assets/icons/qubesos.svg";
+        break;
+      case "Deepin":
+        OS_icon_path = "assets/icons/deepin.svg";
+        break;
+      case "Mageia":
+        OS_icon_path = "assets/icons/mageia.svg";
+        break;
+      case "PuppyLinux":
+        OS_icon_path = "assets/icons/puppy.svg";
+        break;
+      case "Core":
+        OS_icon_path = "assets/icons/coreos.svg";
+        break;
+      case "postmarketOS":
+        OS_icon_path = "assets/icons/postmarketos.svg";
+        break;
+      default:
+        OS_icon_path = "assets/icons/tux.svg";
+    }
+  }
+});
+
 // now, communicate with rust to get the 'home' path
 invoke("get_home_directory").then((home_dir) => {
   changePath(home_dir);
@@ -71,6 +204,7 @@ function changePath(newPath) {
       path_sec.className = "path_section";
       const sys_svg_img = document.createElement("img");
       sys_svg_img.className = "svg";
+      sys_svg_img.src = OS_icon_path;
       path_sec.appendChild(sys_svg_img);
       path_section_elements.appendChild(path_sec);
     }
