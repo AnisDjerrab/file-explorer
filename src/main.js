@@ -23,7 +23,7 @@ function openSidebar() {
 function closeSidebar() {
   sidebar.classList.remove("open");
   main.classList.remove("dim");
-} 
+}
 
 document.addEventListener("click", (e) => {
   const width = window.innerWidth;
@@ -44,20 +44,19 @@ const file_grid_content = {
   files_icons_paths: [],
   files_status: [],
   files_divs: [],
-  selected_elements: []
-}
+  selected_elements: [],
+};
 
 // now, communicate with rust to get the 'home' path
-invoke('get_home_directory').then((home_dir) => {
+invoke("get_home_directory").then((home_dir) => {
   changePath(home_dir);
-  list_index++;
   currentPath = home_dir;
 });
 
 function changePath(newPath) {
   if (newPath != "Err : invalid path.") {
     document.querySelector(".path_area").value = newPath + "/";
-    if (list_index > path_undo_redo_list.length - 1) {
+    if (list_index >= path_undo_redo_list.length) {
       path_undo_redo_list.push(newPath);
     } else {
       path_undo_redo_list[list_index] = newPath;
@@ -67,10 +66,15 @@ function changePath(newPath) {
     let divided_path = newPath.split("/");
     path_section_elements.replaceChildren();
     path_section_elements.appendChild(left_scroll);
-    for (let i = 0; i < divided_path.length; i++) {
-      if (divided_path[i] == "" & i == 0) {
-        divided_path[i] = "ROOT_DIR";
-      }
+    {
+      const path_sec = document.createElement("button");
+      path_sec.className = "path_section";
+      const sys_svg_img = document.createElement("img");
+      sys_svg_img.className = "svg";
+      path_sec.appendChild(sys_svg_img);
+      path_section_elements.appendChild(path_sec);
+    }
+    for (let i = 1; i < divided_path.length; i++) {
       const path_sec = document.createElement("button");
       path_sec.textContent = divided_path[i];
       path_sec.className = "path_section";
@@ -78,7 +82,11 @@ function changePath(newPath) {
     }
     path_section_elements.appendChild(right_scroll);
     // try to communicate with rust to get the files in home
-    invoke('ls_dir', {path : newPath + "/", sortMethod : "A-Z", sortMethodDfs : "dfs"}).then((output) => {
+    invoke("ls_dir", {
+      path: newPath + "/",
+      sortMethod: "A-Z",
+      sortMethodDfs: "dfs",
+    }).then((output) => {
       // get the file grid element
       let new_items = [];
       for (let i = 0; i < output[0].length; i++) {
@@ -91,11 +99,17 @@ function changePath(newPath) {
         new_items.push(file_icon);
         file_icon.addEventListener("click", (e) => {
           if (!e.ctrlKey && !e.metaKey) {
-            for (let i = 0; i < file_grid_content.selected_elements.length; i++) {
-              file_grid_content.selected_elements[i].classList.remove("selected");
+            for (
+              let i = 0;
+              i < file_grid_content.selected_elements.length;
+              i++
+            ) {
+              file_grid_content.selected_elements[i].classList.remove(
+                "selected",
+              );
             }
             file_grid_content.selected_elements = [];
-          } 
+          }
           file_grid_content.selected_elements.push(e.currentTarget);
           e.currentTarget.classList.add("selected");
         });
@@ -105,17 +119,16 @@ function changePath(newPath) {
             invoke("open_file_with_default_app", { path: full_path });
           } else {
             currentPath = newPath + "/" + output[0][i];
-            changePath(currentPath);
             list_index++;
-            path_undo_redo_list.length = list_index + 1;
-            console.log(path_undo_redo_list);
+            path_undo_redo_list.length = list_index;
+            changePath(currentPath);
           }
-        })
+        });
         file_icon.addEventListener("contextmenu", (e) => {
           if (!e.currentTarget.classList.contains("selected")) {
             e.preventDefault();
             file_grid_content.selected_elements.push(e.currentTarget);
-            e.currentTarget.classList.add("selected");  
+            e.currentTarget.classList.add("selected");
           }
         });
         file_icon.appendChild(img);
@@ -136,8 +149,8 @@ function changePath(newPath) {
 let in_mouse_sel = false;
 let initial_click_zone = {
   pos_x: 0,
-  pos_y: 0
-}
+  pos_y: 0,
+};
 
 // get an initial click
 file_grid.addEventListener("mousedown", (e) => {
@@ -150,9 +163,14 @@ file_grid.addEventListener("mousedown", (e) => {
 
 // get the click release, and conclude if it was an area selection or not
 file_grid.addEventListener("mousemove", (e) => {
-  if (initial_click_zone.pos_x != e.clientX && initial_click_zone.pos_y != e.clientY && e.buttons === 1) {
+  if (
+    initial_click_zone.pos_x != e.clientX &&
+    initial_click_zone.pos_y != e.clientY &&
+    e.buttons === 1
+  ) {
     const gridRect = file_grid.getBoundingClientRect();
-    let startX = initial_click_zone.pos_x - gridRect.left + file_grid.scrollLeft;
+    let startX =
+      initial_click_zone.pos_x - gridRect.left + file_grid.scrollLeft;
     let startY = initial_click_zone.pos_y - gridRect.top + file_grid.scrollTop;
     let currentX = e.clientX - gridRect.left + file_grid.scrollLeft;
     let currentY = e.clientY - gridRect.top + file_grid.scrollTop;
@@ -167,7 +185,7 @@ file_grid.addEventListener("mousemove", (e) => {
     selection_box.style.display = "block";
     in_mouse_sel = true;
     const selection_boxRect = selection_box.getBoundingClientRect();
-    document.querySelectorAll(".file_icon").forEach(icon => {
+    document.querySelectorAll(".file_icon").forEach((icon) => {
       const rect = icon.getBoundingClientRect();
       const overlaps =
         rect.left < selection_boxRect.right &&
@@ -184,7 +202,10 @@ file_grid.addEventListener("mousemove", (e) => {
 
 // if the user clicks on the bare file grid => deselect all
 file_grid.addEventListener("mouseup", (e) => {
-  if (e.target === file_grid || e.target.classList.contains("file_icons_grid") && in_mouse_sel == false) {
+  if (
+    e.target === file_grid ||
+    (e.target.classList.contains("file_icons_grid") && in_mouse_sel == false)
+  ) {
     for (let i = 0; i < file_grid_content.selected_elements.length; i++) {
       file_grid_content.selected_elements[i].classList.remove("selected");
     }
@@ -192,15 +213,15 @@ file_grid.addEventListener("mouseup", (e) => {
   }
 });
 
-back.addEventListener(("click"), () => {
+back.addEventListener("click", () => {
   if (list_index > 0) {
     list_index--;
     changePath(path_undo_redo_list[list_index]);
   }
 });
 
-next.addEventListener(("click"), () => {
-  if (list_index <= path_undo_redo_list.length - 1) {
+next.addEventListener("click", () => {
+  if (list_index < path_undo_redo_list.length - 1) {
     list_index++;
     changePath(path_undo_redo_list[list_index]);
   }
