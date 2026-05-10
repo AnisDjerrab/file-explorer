@@ -10,6 +10,8 @@ const selection_box = document.getElementById("selection-box");
 const path_section_elements = document.querySelector(".divided_path_area");
 const right_scroll = document.getElementById("right_divided_path_area_button");
 const left_scroll = document.getElementById("left_divided_path_area_button");
+const middle_area = document.querySelector(".middle_area");
+const path_area = document.querySelector(".path_area");
 
 let currentPath = "";
 let path_undo_redo_list = [];
@@ -198,12 +200,14 @@ invoke("get_operating_system").then((OS_name_and_distro) => {
 
 function changePath(newPath) {
   if (newPath != "Err : invalid path.") {
-    document.querySelector(".path_area").value = newPath + split_token;
+    path_area.value = newPath + split_token;
     if (list_index >= path_undo_redo_list.length) {
       path_undo_redo_list.push(newPath);
     } else {
       path_undo_redo_list[list_index] = newPath;
     }
+    middle_area.replaceChildren();
+    middle_area.appendChild(path_section_elements);
     file_grid.replaceChildren();
     file_grid.appendChild(selection_box);
     let divided_path = newPath.split(split_token);
@@ -384,5 +388,32 @@ next.addEventListener("click", () => {
   if (list_index < path_undo_redo_list.length - 1) {
     list_index++;
     changePath(path_undo_redo_list[list_index]);
+  }
+});
+
+// detect clicks on uncovered zones of the middle area
+path_section_elements.addEventListener("click", (e) => {
+  console.log("in");
+  if (e.target === path_section_elements) {
+    console.log("in2");
+    middle_area.replaceChildren();
+    middle_area.appendChild(path_area);
+    path_area.focus();
+  }
+});
+
+// detect when the user press enter whiel typing stuff in the path input dialogue
+path_area.addEventListener("keypress", (e) => {
+  if (e.key == "Enter") {
+    // checks if path exists
+    invoke("path_exists", { path: path_area.value }).then((result) => {
+      if (result) {
+        if (path_area.value[path_area.value.length - 1] == split_token) {
+          path_area.value.length--;
+        }
+        list_index++;
+        changePath(path_area.value);
+      }
+    });
   }
 });

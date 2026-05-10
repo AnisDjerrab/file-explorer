@@ -14,3 +14,8 @@ pub fn ls_dir(
 ) -> (Vec<String>, Vec<String>, Vec<String>) {
     file_ops::ls_dir(path, sort_method, sort_method_dfs)
 }
+
+#[tauri::command]
+pub fn path_exists(path: String) -> bool {
+    file_ops::path_exists(path)
+}

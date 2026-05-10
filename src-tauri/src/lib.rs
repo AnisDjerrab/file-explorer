@@ -13,6 +13,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             file_abstraction_layer::get_home_directory,
             file_abstraction_layer::ls_dir,
+            file_abstraction_layer::path_exists,
             open_file_with_default_app,
             get_operating_system
         ])

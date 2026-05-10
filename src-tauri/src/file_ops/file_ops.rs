@@ -1202,3 +1202,8 @@ pub fn ls_dir(
     merged_icon_list.append(&mut list_icons_symlinks);
     (merged_file_list, merged_icon_list, status_list)
 }
+
+// this just checks if the path is valid even if I do not have any permission of any kind over it.
+pub fn path_exists(path: String) -> bool {
+    fs::metadata(path).is_ok()
+}
