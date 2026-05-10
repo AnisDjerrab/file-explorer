@@ -47,11 +47,9 @@ body {
 }
 
 .top_bar {
-    margin-top: 8px;
-    margin-bottom: 8px;
-    margin-left: 8px;
-    margin-right: 8px;
+    margin: 8px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
@@ -113,6 +111,10 @@ body {
     }
     .main.dim {
         filter: brightness(0.8);
+    }
+    .middle_area {
+        order: -1;
+        flex: 0 0 100% !important;
     }
 }
 
