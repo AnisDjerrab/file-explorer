@@ -1,9 +1,19 @@
 [package]
 name = "file-explorer"
-version = "0.1.0"
+version = "0.0.1"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true
+
+[workspace]
+members = [".", "service"]
+resolver = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

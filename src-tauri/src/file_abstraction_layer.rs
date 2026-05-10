@@ -17,5 +17,11 @@ pub fn ls_dir(
 
 #[tauri::command]
 pub fn path_exists(path: String) -> bool {
+    let mut service = std::env::current_exe().unwrap();
+    service.pop();
+    service.push("service");
+    std::process::Command::new(service)
+        .spawn()
+        .expect("failed to launch service");
     file_ops::path_exists(path)
 }

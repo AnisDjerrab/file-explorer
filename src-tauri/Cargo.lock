@@ -967,7 +967,7 @@ dependencies = [
 
 [[package]]
 name = "file-explorer"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "etcetera",
  "serde",
@@ -3155,6 +3155,20 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "service"
+version = "0.0.1"
+dependencies = [
+ "etcetera",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin-android-fs",
+ "tauri-plugin-opener",
+ "tauri-plugin-shell",
+ "tree_magic_mini",
 ]
 
 [[package]]

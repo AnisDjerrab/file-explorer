@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "build:service:dev": "cargo build -p service --manifest-path src-tauri/Cargo.toml && cp src-tauri/target/debug/service src-tauri/binaries/service-$(rustc -Vv | grep host | cut -d' ' -f2)",
+    "build:service:release": "cargo build -p service --release --manifest-path src-tauri/Cargo.toml && cp src-tauri/target/release/service src-tauri/binaries/service-$(rustc -Vv | grep host | cut -d' ' -f2)",
+    "tauri:dev": "npm run build:service:dev && tauri dev",
+    "tauri:build": "npm run build:service:release && tauri build",
     "tauri": "tauri"
   },
   "devDependencies": {
