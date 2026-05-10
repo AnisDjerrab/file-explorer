@@ -1175,7 +1175,14 @@ pub fn ls_dir(
         list_icons_files.push(cvt_mimetype_iconfilename(mime.to_string()));
         status_list.push("f".to_string());
     }
-    // second : the symlinks now
+    // second : the directories now
+    let mut dir_list = list_folders(path.clone(), sort_method.clone()).1;
+    let mut list_icons_dir: Vec<String> = Vec::new();
+    for dir in &dir_list {
+        list_icons_dir.push("assets/places/folder.svg".to_string());
+        status_list.push("d".to_string());
+    }
+    // third : the symlinks now
     let mut symlink_list = list_symlinks(path.clone(), sort_method.clone()).1;
     let mut list_icons_symlinks: Vec<String> = Vec::new();
     for symlink in &symlink_list {
@@ -1184,13 +1191,6 @@ pub fn ls_dir(
             tree_magic_mini::from_filepath(std::path::Path::new(&full_path)).unwrap_or("");
         list_icons_symlinks.push(cvt_mimetype_iconfilename(mime.to_string()));
         status_list.push("s".to_string());
-    }
-    // third : the directories now
-    let mut dir_list = list_folders(path.clone(), sort_method.clone()).1;
-    let mut list_icons_dir: Vec<String> = Vec::new();
-    for dir in &dir_list {
-        list_icons_dir.push("assets/places/folder.svg".to_string());
-        status_list.push("d".to_string());
     }
     let mut merged_file_list = Vec::new();
     merged_file_list.append(&mut file_list);
