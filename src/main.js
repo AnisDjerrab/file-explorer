@@ -15,6 +15,8 @@ let currentPath = "";
 let path_undo_redo_list = [];
 let list_index = 0;
 let OS_icon_path = "";
+let Operating_System = "";
+let OS_type = "";
 
 function openSidebar() {
   sidebar.classList.add("open");
@@ -50,7 +52,8 @@ const file_grid_content = {
 
 // get the OS name for future icon selection
 invoke("get_operating_system").then((OS_name_and_distro) => {
-  console.log(OS_name_and_distro[1]);
+  Operating_System = OS_name_and_distro[0];
+  OS_type = OS_name_and_distro[2];
   if (OS_name_and_distro[0] != "linux") {
     switch (OS_name_and_distro[0]) {
       case "windows":

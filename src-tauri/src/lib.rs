@@ -29,14 +29,15 @@ fn open_file_with_default_app(app: tauri::AppHandle, path: String) {
 }
 
 #[tauri::command]
-fn get_operating_system() -> (String, String) {
-    let OS: String = std::env::consts::OS.to_string();
+fn get_operating_system() -> (String, String, String) {
+    let OS = std::env::consts::OS.to_string();
+    let OS_type = std::env::consts::FAMILY.to_string();
     if OS == "linux" {
         // parse /etc/os-release to get OS name
         let file = File::open("/etc/os-release");
         let file = match file {
             Ok(f) => f,
-            Err(_) => return (OS, String::new()),
+            Err(_) => return (OS, String::new(), OS_type),
         };
         let bufReader = BufReader::new(file);
         let mut distro_name = String::new();
@@ -51,8 +52,8 @@ fn get_operating_system() -> (String, String) {
                 break;
             }
         }
-        (OS, distro_name)
+        (OS, distro_name, OS_type)
     } else {
-        (OS, String::new())
+        (OS, String::new(), OS_type)
     }
 }
