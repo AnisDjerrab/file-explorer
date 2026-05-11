@@ -7,6 +7,7 @@ use std::ffi::{CStr, CString};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::os::raw::c_char;
+use tauri::Manager;
 
 extern "C" {
     fn get_stdin_pipe_input() -> *mut c_char;
@@ -31,15 +32,29 @@ fn invalid_func() {
 }
 
 fn main() {
-    let exe_dir = std::env::current_exe().unwrap().parent().unwrap();
-    if fs::exists(format!("{}{}", exe_dir, "PID.txt")).unwrap() {
-        fs::remove_file(format!("{}{}", exe_dir, "PID.txt")).unwrap();
+    if fs::exists(format!(
+        "{}{}",
+        app.path().app_cache_dir().unwrap(),
+        "PID.txt"
+    ))
+    .unwrap()
+    {
+        fs::remove_file(format!(
+            "{}{}",
+            app.path().app_cache_dir().unwrap(),
+            "PID.txt"
+        ))
+        .unwrap();
     }
     writeln!(
         OpenOptions::new()
             .append(true)
             .create(true)
-            .open(format!("{}{}", exe_dir, "PID.txt"))
+            .open(format!(
+                "{}{}",
+                app.path().app_cache_dir().unwrap(),
+                "PID.txt"
+            ))
             .unwrap(),
         std::process::id()
     )

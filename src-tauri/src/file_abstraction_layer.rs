@@ -1,7 +1,7 @@
 #[path = "file_ops/file_ops.rs"]
 pub mod file_ops;
 
-use std::ffi::c_void;
+use std::ffi::{c_char, c_void};
 #[repr(C)]
 pub struct ProcessInfos {
     pub success: bool,
@@ -11,11 +11,12 @@ pub struct ProcessInfos {
 }
 
 unsafe extern "C" {
-    fn establish_comms_with_service_unix() -> *mut ProcessInfos;
+    fn establish_comms_with_service_unix(pipe_dir_path: *const c_char) -> *mut ProcessInfos;
 }
 
 use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::Mutex;
+use tauri::Manager;
 
 struct process_metadata {
     launched: bool,
@@ -76,10 +77,19 @@ fn launch_service_as_root() {
         // low level stuff coming. we need to establish comms.
         #[cfg(unix)]
         {
-            while !fs::exists(format!("{}{}", exe_dir, "PID.txt")).unwrap() {
+            while !fs::exists(format!(
+                "{}{}",
+                app.path().app_cache_dir().unwrap(),
+                "PID.txt"
+            ))
+            .unwrap()
+            {
                 std::thread::yield_now();
             }
-            let established_comms = unsafe { establish_comms_with_service_unix() };
+            let pipe_path = CString::new(app.path().app_cache_dir().unwrap())
+                .expect("String contained interior nul byte");
+            let pipe_path_ptr: *const c_char = c_string.as_ptr();
+            let established_comms = unsafe { establish_comms_with_service_unix(pipe_path_ptr) };
         }
     }
 }
