@@ -13,6 +13,9 @@ lto = "fat"
 codegen-units = 1
 strip = true
 
+[build-dependencies]
+cc = "1.2"
+
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"

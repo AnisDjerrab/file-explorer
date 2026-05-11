@@ -3161,6 +3161,7 @@ dependencies = [
 name = "service"
 version = "0.0.1"
 dependencies = [
+ "cc",
  "etcetera",
  "serde",
  "serde_json",
