@@ -1,6 +1,38 @@
 #[path = "file_ops/file_ops.rs"]
 pub mod file_ops;
 
+use std::ffi::c_void;
+#[repr(C)]
+pub struct ProcessInfos {
+    pub success: bool,
+    pub stdin: *mut c_void,  // FILE*
+    pub stdout: *mut c_void, // FILE*
+    pub stderr: *mut c_void, // FILE*
+}
+
+unsafe extern "C" {
+    fn establish_comms_with_service_unix() -> *mut ProcessInfos;
+}
+
+use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
+use std::sync::Mutex;
+
+struct process_metadata {
+    launched: bool,
+    stdin: Option<ChildStdin>,
+    stdout: Option<ChildStdout>,
+    stderr: Option<ChildStderr>,
+    pid: u32,
+}
+
+static service: Mutex<process_metadata> = Mutex::new(process_metadata {
+    launched: (false),
+    stdin: (None),
+    stdout: (None),
+    stderr: (None),
+    pid: (0),
+});
+
 #[tauri::command]
 pub fn get_home_directory() -> String {
     file_ops::get_home_directory()
@@ -24,4 +56,30 @@ pub fn path_exists(path: String) -> bool {
         .spawn()
         .expect("failed to launch service");
     file_ops::path_exists(path)
+}
+
+fn launch_service_as_root() {
+    #[cfg(target_os = "linux")]
+    {
+        let mut pkexec = std::process::Command::new("pkexec")
+            .args(&["service"])
+            .spawn()
+            .unwrap();
+        let status = pkexec.wait().unwrap();
+        if (status.code().unwrap() != 0) {
+            return;
+        }
+        *service.lock().unwrap().launched = true;
+    }
+    if (*service.lock().unwrap().launched) {
+        // now, call the good old C code to do all the job that rust can't
+        // low level stuff coming. we need to establish comms.
+        #[cfg(unix)]
+        {
+            while !fs::exists(format!("{}{}", exe_dir, "PID.txt")).unwrap() {
+                std::thread::yield_now();
+            }
+            let established_comms = unsafe { establish_comms_with_service_unix() };
+        }
+    }
 }

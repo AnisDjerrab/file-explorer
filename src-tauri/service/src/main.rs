@@ -4,7 +4,7 @@ pub mod file_ops;
 
 use libc::free;
 use std::ffi::{CStr, CString};
-use std::fs::OpenOptions;
+use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::os::raw::c_char;
 
@@ -31,6 +31,19 @@ fn invalid_func() {
 }
 
 fn main() {
+    let exe_dir = std::env::current_exe().unwrap().parent().unwrap();
+    if fs::exists(format!("{}{}", exe_dir, "PID.txt")).unwrap() {
+        fs::remove_file(format!("{}{}", exe_dir, "PID.txt")).unwrap();
+    }
+    writeln!(
+        OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(format!("{}{}", exe_dir, "PID.txt"))
+            .unwrap(),
+        std::process::id()
+    )
+    .unwrap();
     loop {
         // keep reeding the stdio input
         unsafe {
@@ -60,9 +73,12 @@ fn main() {
                 // transmit the result
                 println!("{result}");
                 // the program *should* receive it on the other side.
+                // clean up
+                free(arg1)
             } else {
                 func_addr();
             }
+            free(c_ptr);
         }
     }
 }
