@@ -5,9 +5,8 @@ use std::ffi::{c_char, c_void};
 #[repr(C)]
 pub struct ProcessInfos {
     pub success: bool,
-    pub stdin: *mut c_void,  // FILE*
-    pub stdout: *mut c_void, // FILE*
-    pub stderr: *mut c_void, // FILE*
+    pub pipe_in: *mut c_void,  // FILE*
+    pub pipe_out: *mut c_void, // FILE*
 }
 
 unsafe extern "C" {
