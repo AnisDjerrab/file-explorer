@@ -8,7 +8,7 @@
     // todo => win imports
     // todo => win struct
     typedef struct {
-    } process_infos;
+    } pipe_struct;
 #else
     #define PLATFORM_UNIX
     #include <sys/stat.h>
@@ -18,15 +18,15 @@
     typedef struct {
         FILE* pipe_out;
         FILE* pipe_in;
-    } process_infos;
+    } pipe_struct;
 #endif
 
 #define MAX_IO_BUFFER_SIZE 4096
 
-process_infos* establish_comms_with_service_unix(const char* pipe_dir_path) {
+pipe_struct* establish_comms_with_service_unix(const char* pipe_dir_path) {
     #ifdef PLATFORM_UNIX
         // initialize the return value
-        process_infos* output = malloc(sizeof(process_infos));
+        pipe_struct* output = malloc(sizeof(pipe_struct));
         if (output == NULL) {
             return NULL;
         }
