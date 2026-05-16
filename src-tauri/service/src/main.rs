@@ -84,7 +84,8 @@ fn main() {
                 if arg1.is_null() {
                     continue;
                 }
-                let result: bool = func_addr(&CStr::from_ptr(c_ptr).to_str().unwrap().to_string());
+                let result: bool =
+                    func_addr(&CStr::from_ptr(c_ptr).to_str().unwrap().to_string(), true);
                 // transmit the result
                 println!("{result}");
                 // the program *should* receive it on the other side.

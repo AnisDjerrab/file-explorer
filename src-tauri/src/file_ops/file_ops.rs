@@ -1,5 +1,8 @@
 use etcetera::{choose_base_strategy, BaseStrategy};
-use std::fs::{self, DirEntry};
+use std::{
+    fs::{self, DirEntry},
+    io::ErrorKind,
+};
 
 pub fn get_home_directory() -> String {
     // this works on linux, windows, macos and iOS, but not on android. we unfortunately have to hard code the home adress on android
@@ -1204,6 +1207,19 @@ pub fn ls_dir(
 }
 
 // this just checks if the path is valid even if I do not have any permission of any kind over it.
-pub fn path_exists(path: String) -> bool {
-    fs::metadata(path).is_ok()
+pub fn path_exists(path: String, ignore: bool) -> (bool, bool) {
+    if !ignore {
+        match fs::metadata(path) {
+            Ok(_) => (true, false),
+            Err(e) => match e.kind() {
+                ErrorKind::PermissionDenied => (false, true),
+                _ => (false, false),
+            },
+        }
+    } else {
+        match fs::metadata(path) {
+            Ok(_) => (true, false),
+            Err(e) => (false, false),
+        }
+    }
 }
