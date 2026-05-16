@@ -49,7 +49,7 @@ pub fn ls_dir(
 
 #[tauri::command]
 pub fn path_exists(path: String) -> bool {
-    let output = file_ops::path_exists(path);
+    let output = file_ops::path_exists(path, false);
     if output.1 == true {
         // try to launch the root service
         let status = launch_service_as_root();

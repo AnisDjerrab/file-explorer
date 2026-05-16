@@ -23,10 +23,10 @@
 
 #define MAX_INPUT_SIZE 4096
 
-// this is a low level function to read directly from stdin without any interferences
-char* get_stdin_pipe_input() {
+// this is a low level function to read directly from pipe_in without any interferences
+char* get_stdin_pipe_input(FILE* pipe) {
     char* buffer = (char*)malloc(MAX_INPUT_SIZE);
-    char* ptr_or_err = fgets(buffer, MAX_INPUT_SIZE, stdin);
+    char* ptr_or_err = fgets(buffer, MAX_INPUT_SIZE, pipe);
     if (ptr_or_err == NULL) {
         free((void*)buffer);
         return NULL;
@@ -35,11 +35,15 @@ char* get_stdin_pipe_input() {
     }
 }
 
+// this is a low level function to read directly from pipe_in without any interferences
+void send_stdout_pipe_output(FILE* pipe, const char* msg) {
+    fwrite(msg, strlen(msg), 1, pipe);
+}
 
 // this is the service pipe implementation.
 #define MAX_IO_BUFFER_SIZE 4096
 
-pipe_struct* establish_comms_with_service_unix(const char* pipe_dir_path) {
+pipe_struct* establish_comms_with_core_unix(const char* pipe_dir_path) {
     #ifdef PLATFORM_UNIX
         // initialize the return value
         pipe_struct* output = malloc(sizeof(pipe_struct));
