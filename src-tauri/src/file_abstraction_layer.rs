@@ -1,35 +1,36 @@
 #[path = "file_ops/file_ops.rs"]
 pub mod file_ops;
 
-use libc::{fread, fwrite};
+use libc::{fread, fwrite, malloc, strlen, FILE};
 use std::ffi::{c_char, c_void, CString};
 #[repr(C)]
 pub struct ProcessInfos {
-    pub pipe_in: *mut c_void,  // FILE*
-    pub pipe_out: *mut c_void, // FILE*
+    pipe_in: *mut c_void,  // FILE*
+    pipe_out: *mut c_void, // FILE*
 }
 
 unsafe extern "C" {
     fn establish_comms_with_service_unix(pipe_dir_path: *const c_char) -> *mut ProcessInfos;
 }
 
-use std::fs::metadata;
-use std::os::unix::fs::MetadataExt;
-use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::Mutex;
-use tauri::Manager;
+
+pub struct RawPtr(*mut c_void);
+
+unsafe impl Send for RawPtr {}
+unsafe impl Sync for RawPtr {}
 
 pub struct ProcessMetadata {
     pub running: bool,
-    pub pipe_in: *mut c_void,
-    pub pipe_out: *mut c_void,
+    pub pipe_in: RawPtr,
+    pub pipe_out: RawPtr,
     pub pid: i32,
 }
 
-static SERVICE: Mutex<process_metadata> = Mutex::new(process_metadata {
+static SERVICE: Mutex<ProcessMetadata> = Mutex::new(ProcessMetadata {
     running: (false),
-    pipe_in: (0),
-    pipe_out: (0),
+    pipe_in: RawPtr(std::ptr::null_mut()),
+    pipe_out: RawPtr(std::ptr::null_mut()),
     pid: (0),
 });
 
@@ -54,14 +55,24 @@ pub fn path_exists(path: String) -> bool {
         // try to launch the root service
         let status = launch_service_as_root();
         if status {
-            let mut metadata = SERVICE.lock().unwrap();
-            let out_msg = CString::new("path_exists");
-            fwrite(out_msg.as_ptr(), strlen(out_msg), 1, metadata.pipe_out);
-            // now, wait to read what it returns
             unsafe {
-                let in_msg = malloc(4096);
-                fread(in_msg, 4096, 1, metadata.pipe_in);
-                if in_msg == "false" {
+                let metadata = SERVICE.lock().unwrap();
+                let out_msg = CString::new("path_exists").unwrap();
+                fwrite(
+                    out_msg.as_ptr() as *const c_void,
+                    strlen(out_msg.as_ptr()),
+                    1,
+                    metadata.pipe_out.0 as *mut FILE,
+                );
+                // now, wait to read what it returns
+                let in_msg = malloc(4096) as *mut c_char;
+                fread(
+                    in_msg as *mut c_void,
+                    4096,
+                    1,
+                    metadata.pipe_in.0 as *mut FILE,
+                );
+                if in_msg == "false".as_ptr() as *mut c_char {
                     false
                 } else {
                     true
@@ -76,40 +87,44 @@ pub fn path_exists(path: String) -> bool {
 }
 
 fn launch_service_as_root() -> bool {
+    let app_cache_dir: String;
     #[cfg(target_os = "linux")]
     {
+        std::fs::read_dir(std::env::current_exe().unwrap().parent().unwrap())
+            .unwrap()
+            .for_each(|e| println!("{}", e.unwrap().path().display()));
         let mut pkexec = std::process::Command::new("pkexec")
             .args(&["service"])
             .spawn()
             .unwrap();
         let status = pkexec.wait().unwrap();
-        if (status.code().unwrap() != 0) {
+        if status.code().unwrap() != 0 {
             return false;
         }
-        *service.lock().unwrap().launched = true;
+        SERVICE.lock().unwrap().running = true;
+        app_cache_dir = "~/.config/com.anis.file_explorer/".to_string();
     }
-    if (*service.lock().unwrap().launched) {
+    if SERVICE.lock().unwrap().running {
         // now, call the good old C code to do all the job that rust can't
         // low level stuff coming. we need to establish comms.
         #[cfg(unix)]
         {
-            while !fs::exists(format!(
-                "{}{}",
-                app.path().app_cache_dir().unwrap(),
-                "PID.txt"
-            ))
-            .unwrap()
-            {
+            while !std::fs::exists(format!("{}{}", app_cache_dir, "PID.txt")).unwrap() {
                 std::thread::yield_now();
             }
-            let pipe_path = CString::new(app.path().app_cache_dir().unwrap())
-                .expect("String contained interior nul byte");
-            let pipe_path_ptr: *const c_char = c_string.as_ptr();
+            let pipe_path =
+                CString::new(app_cache_dir).expect("String contained interior nul byte");
+            let pipe_path_ptr: *const c_char = pipe_path.as_ptr();
             let established_comms = unsafe { establish_comms_with_service_unix(pipe_path_ptr) };
             let mut metadata = SERVICE.lock().unwrap();
-            metadata.pipe_in = established_comms.pipe_in;
-            metadata.pipe_out = established_comms.pipe_out;
-            let pid: i32 = std::fs::read_to_string(app.cache().cache_dir().unwrap())
+            metadata.pipe_in = unsafe { RawPtr((*established_comms).pipe_in) };
+            metadata.pipe_out = unsafe { RawPtr((*established_comms).pipe_out) };
+            let app_cache_dir: String;
+            #[cfg(target_os = "linux")]
+            {
+                app_cache_dir = "~/.cache/com.anis.file-explorer".to_string();
+            }
+            let pid: i32 = std::fs::read_to_string(app_cache_dir)
                 .unwrap_or_default()
                 .lines()
                 .next()
@@ -117,7 +132,7 @@ fn launch_service_as_root() -> bool {
                 .trim()
                 .parse()
                 .unwrap_or(0);
-            if (pid == 0) {
+            if pid == 0 {
                 return false;
             }
             metadata.pid = pid;

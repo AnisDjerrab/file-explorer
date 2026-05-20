@@ -6,9 +6,9 @@
   "scripts": {
     "build:service:dev": "cargo build -p service --manifest-path src-tauri/Cargo.toml && cp src-tauri/target/debug/service src-tauri/binaries/service-$(rustc -Vv | grep host | cut -d' ' -f2)",
     "build:service:release": "cargo build -p service --release --manifest-path src-tauri/Cargo.toml && cp src-tauri/target/release/service src-tauri/binaries/service-$(rustc -Vv | grep host | cut -d' ' -f2)",
-    "tauri:dev": "npm run build:service:dev && tauri dev",
-    "tauri:build": "npm run build:service:release && tauri build",
-    "tauri": "tauri"
+    "tauri:dev": "npm run build:service:dev && npx @tauri-apps/cli dev",
+    "tauri:build": "npm run build:service:release && npx @tauri-apps/cli build",
+    "tauri": "npx @tauri-apps/cli"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.0"

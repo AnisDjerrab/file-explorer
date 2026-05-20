@@ -1,4 +1,4 @@
 fn main() {
-    cc::Build::new().file("src/c_lib.c").compile("c_lib");
+    cc::Build::new().file("src-c/c_lib.c").compile("c_lib");
     tauri_build::build()
 }

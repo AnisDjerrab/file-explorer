@@ -971,6 +971,7 @@ version = "0.0.1"
 dependencies = [
  "cc",
  "etcetera",
+ "libc",
  "serde",
  "serde_json",
  "tauri",
@@ -3164,6 +3165,7 @@ version = "0.0.1"
 dependencies = [
  "cc",
  "etcetera",
+ "libc",
  "serde",
  "serde_json",
  "tauri",
