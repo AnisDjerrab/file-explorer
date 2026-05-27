@@ -38,6 +38,7 @@ char* get_stdin_pipe_input(FILE* pipe) {
 // this is a low level function to read directly from pipe_in without any interferences
 void send_stdout_pipe_output(FILE* pipe, const char* msg) {
     fwrite(msg, strlen(msg), 1, pipe);
+    fflush(pipe);
 }
 
 // this is the service pipe implementation.
@@ -45,7 +46,6 @@ void send_stdout_pipe_output(FILE* pipe, const char* msg) {
 
 pipe_struct* establish_comms_with_core_unix(const char* pipe_dir_path) {
     #ifdef PLATFORM_UNIX
-        // initialize the return value
         pipe_struct* output = malloc(sizeof(pipe_struct));
         if (output == NULL) {
             return NULL;
@@ -68,7 +68,7 @@ pipe_struct* establish_comms_with_core_unix(const char* pipe_dir_path) {
         // create the pipe file & pipe itself
         FILE* fd_out;
         // check if it fails
-        if (mkfifo(pipe_out_path, 0666) == -1) {
+        if (mkfifo(pipe_out_path, 0777) == -1) {
             free(output);
             return NULL;
         }

@@ -90,15 +90,21 @@ fn launch_service_as_root() -> bool {
     let app_cache_dir: String;
     #[cfg(target_os = "linux")]
     {
-        std::fs::read_dir(std::env::current_exe().unwrap().parent().unwrap())
-            .unwrap()
-            .for_each(|e| println!("{}", e.unwrap().path().display()));
+        let user = std::env::var("USER").unwrap_or_else(|_| "user".to_string());
         let mut pkexec = std::process::Command::new("pkexec")
-            .args(&["service"])
+            .args(&[format!(
+                "{}{}{}",
+                std::env::current_exe().unwrap().parent().unwrap().display(),
+                std::path::MAIN_SEPARATOR,
+                "service"
+            )])
+            .arg("--user")
+            .arg(user)
             .spawn()
             .unwrap();
         let status = pkexec.wait().unwrap();
-        if status.code().unwrap() != 0 {
+        if status.code().unwrap_or(-1) != 0 {    println!("hello world");
+
             return false;
         }
         SERVICE.lock().unwrap().running = true;

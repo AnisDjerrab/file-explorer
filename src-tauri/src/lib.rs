@@ -40,9 +40,9 @@ fn get_operating_system() -> (String, String, String) {
             Ok(f) => f,
             Err(_) => return (os, String::new(), os_type),
         };
-        let bufReader = BufReader::new(file);
+        let buf_reader = BufReader::new(file);
         let mut distro_name = String::new();
-        for line in bufReader.lines() {
+        for line in buf_reader.lines() {
             let content = match line {
                 Ok(l) => l,
                 Err(_) => String::new(),

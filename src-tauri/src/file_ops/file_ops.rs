@@ -87,8 +87,6 @@ fn sort(unsorted_list: &mut Vec<DirEntry>, sort_method: String) -> Vec<String> {
                 || a.metadata().unwrap().is_symlink() && b.metadata().unwrap().is_dir()
                 || b.metadata().unwrap().is_symlink()
             {
-                let a_tmp = a.path();
-                let b_tmp = b.path();
                 let a_name = a.file_name().to_string_lossy().into_owned();
                 let b_name = b.file_name().to_string_lossy().into_owned();
 
@@ -1181,7 +1179,7 @@ pub fn ls_dir(
     // second : the directories now
     let mut dir_list = list_folders(path.clone(), sort_method.clone()).1;
     let mut list_icons_dir: Vec<String> = Vec::new();
-    for dir in &dir_list {
+    for _ in &dir_list {
         list_icons_dir.push("assets/places/folder.svg".to_string());
         status_list.push("d".to_string());
     }
@@ -1219,7 +1217,7 @@ pub fn path_exists(path: String, ignore: bool) -> (bool, bool) {
     } else {
         match fs::metadata(path) {
             Ok(_) => (true, false),
-            Err(e) => (false, false),
+            Err(_) => (false, false),
         }
     }
 }
