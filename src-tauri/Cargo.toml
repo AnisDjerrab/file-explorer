@@ -2,7 +2,7 @@
 name = "file-explorer"
 version = "0.0.1"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["anis"]
 edition = "2021"
 
 [profile.release]
@@ -26,7 +26,6 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
-cc = "1.2"
 
 [dependencies]
 tauri = { version = "2", features = [] }

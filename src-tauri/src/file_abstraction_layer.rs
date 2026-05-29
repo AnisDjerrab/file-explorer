@@ -1,21 +1,14 @@
 #[path = "file_ops/file_ops.rs"]
 pub mod file_ops;
+#[path = "root_ops/root_ops.rs"]
+pub mod root_ops;
 
 use libc::{fread, fwrite, malloc, strlen, FILE};
 use std::ffi::{c_char, c_void, CString};
-#[repr(C)]
-pub struct ProcessInfos {
-    pipe_in: *mut c_void,  // FILE*
-    pipe_out: *mut c_void, // FILE*
-}
-
-unsafe extern "C" {
-    fn establish_comms_with_service_unix(pipe_dir_path: *const c_char) -> *mut ProcessInfos;
-}
 
 use std::sync::Mutex;
 
-pub struct RawPtr(*mut c_void);
+pub struct RawPtr(*mut FILE);
 
 unsafe impl Send for RawPtr {}
 unsafe impl Sync for RawPtr {}
@@ -103,7 +96,8 @@ fn launch_service_as_root() -> bool {
             .spawn()
             .unwrap();
         let status = pkexec.wait().unwrap();
-        if status.code().unwrap_or(-1) != 0 {    println!("hello world");
+        if status.code().unwrap_or(-1) != 0 {
+            println!("hello world");
 
             return false;
         }
@@ -118,10 +112,8 @@ fn launch_service_as_root() -> bool {
             while !std::fs::exists(format!("{}{}", app_cache_dir, "PID.txt")).unwrap() {
                 std::thread::yield_now();
             }
-            let pipe_path =
-                CString::new(app_cache_dir).expect("String contained interior nul byte");
-            let pipe_path_ptr: *const c_char = pipe_path.as_ptr();
-            let established_comms = unsafe { establish_comms_with_service_unix(pipe_path_ptr) };
+            let pipe_path = "String contained interior nul byte";
+            let established_comms = root_ops::establish_comms_with_service_unix(pipe_path);
             let mut metadata = SERVICE.lock().unwrap();
             metadata.pipe_in = unsafe { RawPtr((*established_comms).pipe_in) };
             metadata.pipe_out = unsafe { RawPtr((*established_comms).pipe_out) };

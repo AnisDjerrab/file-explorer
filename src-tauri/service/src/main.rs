@@ -1,24 +1,16 @@
 // include the file_ops namespace copied all the way here via a simple symlink
 #[path = "file_ops/file_ops.rs"]
 pub mod file_ops;
+#[path = "root_ops/root_ops.rs"]
+pub mod root_ops;
 
 use libc::free;
 use std::ffi::{c_void, CStr, CString};
+use std::fs::DirBuilder;
 use std::fs::{self, OpenOptions};
-use std::fs::{DirBuilder, File};
 use std::io::Write;
 use std::os::raw::c_char;
 use std::ptr::null;
-#[repr(C)]
-pub struct ProcessInfos {
-    pub pipe_in: *mut c_void,  // FILE*
-    pub pipe_out: *mut c_void, // FILE*
-}
-extern "C" {
-    fn get_stdin_pipe_input(pipe_in: *mut c_void) -> *mut c_char;
-    fn send_stdout_pipe_output(pipe_out: *mut c_void, msg: *const c_char);
-    fn establish_comms_with_core_unix(pipe_dir_path: *const c_char) -> *mut ProcessInfos;
-}
 
 fn invalid_func() {
     writeln!(
@@ -117,8 +109,7 @@ fn main() {
         let _ = fs::set_permissions(&app_cache_dir, perms);
     }
     // now, we must get the stdin/out handlers
-    let handlers =
-        unsafe { establish_comms_with_core_unix(CString::new(app_cache_dir).unwrap().as_ptr()) };
+    let handlers = root_ops::establish_comms_with_core_unix(&app_cache_dir);
     if handlers as *const i64 == null() as *const i64 {
         write_to_log_file("ERROR: something bad occured while creating pipes");
     } else {
@@ -126,7 +117,7 @@ fn main() {
         loop {
             // keep reeding the stdio input
             unsafe {
-                let c_ptr: *mut c_char = get_stdin_pipe_input(handlers.read().pipe_in);
+                let c_ptr: *mut c_char = root_ops::get_stdin_pipe_input(handlers.read().pipe_in);
                 write_to_log_file("INFO: received job to do.");
                 if c_ptr.is_null() {
                     continue;
@@ -136,7 +127,7 @@ fn main() {
                 // now, we call the func accordingly
                 if CStr::from_ptr(c_ptr).to_str().unwrap() == "path_exists" {
                     // we need a single arg
-                    let arg1: *mut c_char = get_stdin_pipe_input(handlers.read().pipe_in);
+                    let arg1: *mut c_char = root_ops::get_stdin_pipe_input(handlers.read().pipe_in);
                     if arg1.is_null() {
                         continue;
                     }
@@ -145,7 +136,7 @@ fn main() {
                         true,
                     );
                     // transmit the result
-                    send_stdout_pipe_output(
+                    root_ops::send_stdout_pipe_output(
                         handlers.read().pipe_out,
                         CString::new(result.0.to_string()).unwrap().as_ptr(),
                     );
