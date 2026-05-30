@@ -1,4 +1,4 @@
-use libc::{fileno, fopen, mkfifo, stat, FILE};
+use libc::{fopen, mkfifo, open, stat, FILE, F_SETFL};
 
 pub struct ProcessInfos {
     pub pipe_in: *mut FILE,  // FILE*
@@ -18,23 +18,26 @@ pub fn establish_comms_with_service_unix(pipe_dir_path: &str) -> *mut ProcessInf
     // create the pipe file & pipe itself
     let mut fd_out: *mut FILE;
     // check if it fails
+    println!("hello world");
     if unsafe { mkfifo(pipe_out_path.as_ptr() as *const i8, 0777) == -1 } {
         unsafe { drop(Box::from_raw(output)) };
         return std::ptr::null_mut() as *mut ProcessInfos;
     }
     // we are waiting for the other side to just open the file in RO
+    println!("hello world");
     unsafe {
         loop {
             fd_out = fopen(
                 pipe_out_path.as_ptr() as *const i8,
                 b"w\0".as_ptr() as *const i8,
             );
-            if fileno(fd_out) != -1 {
+            if !fd_out.is_null() {
                 break;
             }
             std::thread::yield_now();
         }
     }
+    println!("hello world");
     unsafe {
         (*output).pipe_out = fd_out;
     }
@@ -46,12 +49,24 @@ pub fn establish_comms_with_service_unix(pipe_dir_path: &str) -> *mut ProcessInf
     while unsafe { stat(pipe_in_path.as_ptr() as *const i8, &mut st) } != 0 {
         std::thread::yield_now();
     }
+    println!("hello world");
+    // service side - open read end non-blocking
+    let fd_raw = unsafe {
+        open(
+            pipe_in_path.as_ptr() as *const i8,
+            libc::O_RDONLY | libc::O_NONBLOCK,
+        )
+    };
+    println!("hello world");
+    // then clear non-blocking for actual use
+    unsafe { libc::fcntl(fd_raw, F_SETFL, 0) };
     let fd_in = unsafe {
         fopen(
             pipe_in_path.as_ptr() as *const i8,
             b"r\0".as_ptr() as *const i8,
         )
     };
+    println!("hello world");
     unsafe {
         (*output).pipe_in = fd_in;
     }

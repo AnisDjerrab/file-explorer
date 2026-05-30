@@ -97,31 +97,29 @@ fn launch_service_as_root() -> bool {
             .unwrap();
         let status = pkexec.wait().unwrap();
         if status.code().unwrap_or(-1) != 0 {
-            println!("hello world");
-
             return false;
         }
         SERVICE.lock().unwrap().running = true;
-        app_cache_dir = "~/.config/com.anis.file_explorer/".to_string();
     }
     if SERVICE.lock().unwrap().running {
-        // now, call the good old C code to do all the job that rust can't
+        // now, call the rust code that handles pipe in root_ops
         // low level stuff coming. we need to establish comms.
         #[cfg(unix)]
         {
+            let app_cache_dir: String;
+            #[cfg(target_os = "linux")]
+            {
+                app_cache_dir = "~/.cache/com.anis.file_explorer/".to_string();
+            }
             while !std::fs::exists(format!("{}{}", app_cache_dir, "PID.txt")).unwrap() {
                 std::thread::yield_now();
             }
+            println!("hello world");
             let pipe_path = "String contained interior nul byte";
             let established_comms = root_ops::establish_comms_with_service_unix(pipe_path);
             let mut metadata = SERVICE.lock().unwrap();
             metadata.pipe_in = unsafe { RawPtr((*established_comms).pipe_in) };
             metadata.pipe_out = unsafe { RawPtr((*established_comms).pipe_out) };
-            let app_cache_dir: String;
-            #[cfg(target_os = "linux")]
-            {
-                app_cache_dir = "~/.cache/com.anis.file-explorer".to_string();
-            }
             let pid: i32 = std::fs::read_to_string(app_cache_dir)
                 .unwrap_or_default()
                 .lines()

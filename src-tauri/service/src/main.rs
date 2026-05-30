@@ -6,10 +6,11 @@ pub mod root_ops;
 
 use libc::free;
 use std::ffi::{c_void, CStr, CString};
-use std::fs::DirBuilder;
 use std::fs::{self, OpenOptions};
+use std::fs::{DirBuilder, Permissions};
 use std::io::Write;
 use std::os::raw::c_char;
+use std::os::unix::fs::PermissionsExt;
 use std::ptr::null;
 
 fn invalid_func() {
@@ -49,58 +50,18 @@ fn write_to_log_file(msg: &str) {
 }
 
 fn main() {
+    let user = std::env::args()
+        .skip_while(|a| a != "--user")
+        .nth(1)
+        .unwrap_or_else(|| "user".to_string());
     write_to_log_file("INFO: successfully began the service.");
-    if fs::exists(format!(
-        "{}{}",
-        format!(
-            "{}{}",
-            std::env::current_exe().unwrap().parent().unwrap().display(),
-            std::path::MAIN_SEPARATOR
-        ),
-        "PID.txt"
-    ))
-    .unwrap()
-    {
-        fs::remove_file(format!(
-            "{}{}",
-            format!(
-                "{}{}",
-                std::env::current_exe().unwrap().parent().unwrap().display(),
-                std::path::MAIN_SEPARATOR
-            ),
-            "PID.txt"
-        ))
-        .unwrap();
-    }
-    writeln!(
-        OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(format!(
-                "{}{}",
-                format!(
-                    "{}{}",
-                    std::env::current_exe().unwrap().parent().unwrap().display(),
-                    std::path::MAIN_SEPARATOR
-                ),
-                "PID.txt"
-            ))
-            .unwrap(),
-        "{}",
-        std::process::id()
-    )
-    .unwrap();
     // statically decide where the cache dir is
     let app_cache_dir: String;
     #[cfg(target_os = "linux")]
     {
         // get the actual logged-in user (not root)
         use std::os::unix::fs::PermissionsExt;
-        let user = std::env::args()
-            .skip_while(|a| a != "--user")
-            .nth(1)
-            .unwrap_or_else(|| "user".to_string());
-        app_cache_dir = format!("/home/{}/.cache/com.anis.file-explorer/", user).to_string();
+        app_cache_dir = format!("/home/{}/.cache/com.anis.file_explorer/", user).to_string();
         let mut builder = DirBuilder::new();
         builder.recursive(true);
         builder.create(&app_cache_dir).unwrap();
@@ -108,6 +69,18 @@ fn main() {
         perms.set_mode(0o777);
         let _ = fs::set_permissions(&app_cache_dir, perms);
     }
+    if fs::exists(format!("{}{}", app_cache_dir, "PID.txt")).unwrap() {
+        fs::remove_file(format!("{}{}", app_cache_dir, "PID.txt")).unwrap();
+    }
+    let mut pid_file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(format!("{}{}", app_cache_dir, "PID.txt"))
+        .unwrap();
+    pid_file
+        .set_permissions(Permissions::from_mode(0o777))
+        .expect("");
+    writeln!(pid_file, "{}", std::process::id()).unwrap();
     // now, we must get the stdin/out handlers
     let handlers = root_ops::establish_comms_with_core_unix(&app_cache_dir);
     if handlers as *const i64 == null() as *const i64 {

@@ -1,4 +1,4 @@
-use libc::{fflush, fgets, fileno, fopen, free, fwrite, malloc, mkfifo, strnlen, FILE};
+use libc::{fflush, fgets, fopen, free, fwrite, malloc, mkfifo, open, strnlen, FILE, F_SETFL};
 use std::ffi::c_void;
 
 pub struct ProcessInfos {
@@ -42,9 +42,18 @@ pub fn establish_comms_with_core_unix(pipe_dir_path: &str) -> *mut ProcessInfos 
     }));
     // the first pipe is the pipe from this main process to the service. the stdin equivalent.
     // assemble the hole path into a buffer.
-    let pipe_in_path = format!("{}/pipe_core_to_service", pipe_dir_path);
+    let pipe_in_path = format!("{}/pipe_core_to_service\0", pipe_dir_path);
     // open the path in RO
     let fd_in: *mut FILE;
+    // service side - open read end non-blocking
+    let fd_raw = unsafe {
+        open(
+            pipe_in_path.as_ptr() as *const i8,
+            libc::O_RDONLY | libc::O_NONBLOCK,
+        )
+    };
+    // then clear non-blocking for actual use
+    unsafe { libc::fcntl(fd_raw, F_SETFL, 0) };
     fd_in = unsafe {
         fopen(
             pipe_in_path.as_ptr() as *const i8,
@@ -53,11 +62,11 @@ pub fn establish_comms_with_core_unix(pipe_dir_path: &str) -> *mut ProcessInfos 
     };
     unsafe { (*output).pipe_in = fd_in }
     // now, it's time to create the output pipe
-    let pipe_out_path = format!("{}/pipe_service_to_core", pipe_dir_path);
+    let pipe_out_path = format!("{}/pipe_service_to_core\0", pipe_dir_path);
     // create the pipe file & pipe itself
     let mut fd_out: *mut FILE;
     // check if it fails
-    if unsafe { mkfifo(pipe_out_path.as_ptr() as *const i8, 0777) == -1 } {
+    if unsafe { mkfifo(pipe_out_path.as_ptr() as *const i8, 0o777) == -1 } {
         return std::ptr::null_mut();
     }
     // we are waiting for the other side to just open the file in RO
@@ -67,7 +76,7 @@ pub fn establish_comms_with_core_unix(pipe_dir_path: &str) -> *mut ProcessInfos 
                 pipe_out_path.as_ptr() as *const i8,
                 b"w\0".as_ptr() as *const i8,
             );
-            if fileno(fd_out) != -1 {
+            if !fd_out.is_null() {
                 break;
             }
             std::thread::yield_now();
