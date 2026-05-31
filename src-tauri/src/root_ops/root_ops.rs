@@ -12,14 +12,17 @@ pub fn establish_comms_with_service_unix(pipe_dir_path: &str) -> *mut ProcessInf
         pipe_in: std::ptr::null_mut(),
         pipe_out: std::ptr::null_mut(),
     }));
+    // create the directory if not present.
+    std::fs::create_dir_all(pipe_dir_path).expect("failed to create pipe dir");
     // the first pipe is the pipe from this main process to the service. the stdout equivalent.
     // assemble the hole path into a buffer.
-    let pipe_out_path = format!("{}/pipe_core_to_service\0", pipe_dir_path);
+    let pipe_out_path = format!("{}pipe_core_to_service\0", pipe_dir_path);
     // create the pipe file & pipe itself
     let mut fd_out: *mut FILE;
     // check if it fails
-    println!("hello world");
-    if unsafe { mkfifo(pipe_out_path.as_ptr() as *const i8, 0777) == -1 } {
+    if unsafe { mkfifo(pipe_out_path.as_ptr() as *const i8, 0o777) } == -1 {
+        let err = std::io::Error::last_os_error();
+        println!("{}", err);
         unsafe { drop(Box::from_raw(output)) };
         return std::ptr::null_mut() as *mut ProcessInfos;
     }

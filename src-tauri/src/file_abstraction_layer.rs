@@ -109,31 +109,36 @@ fn launch_service_as_root() -> bool {
             let app_cache_dir: String;
             #[cfg(target_os = "linux")]
             {
-                app_cache_dir = "~/.cache/com.anis.file_explorer/".to_string();
+                app_cache_dir = format!(
+                    "/home/{}/.cache/com.anis.file_explorer/",
+                    std::env::var("USER").expect("ERR_HOME_NOT_FOUND")
+                );
             }
-            while !std::fs::exists(format!("{}{}", app_cache_dir, "PID.txt")).unwrap() {
+            while !std::fs::exists(format!("{}{}", app_cache_dir, "PID.txt")).unwrap_or(false) {
                 std::thread::yield_now();
             }
-            println!("hello world");
-            let pipe_path = "String contained interior nul byte";
-            let established_comms = root_ops::establish_comms_with_service_unix(pipe_path);
-            let mut metadata = SERVICE.lock().unwrap();
-            metadata.pipe_in = unsafe { RawPtr((*established_comms).pipe_in) };
-            metadata.pipe_out = unsafe { RawPtr((*established_comms).pipe_out) };
-            let pid: i32 = std::fs::read_to_string(app_cache_dir)
-                .unwrap_or_default()
-                .lines()
-                .next()
-                .unwrap_or("")
-                .trim()
-                .parse()
-                .unwrap_or(0);
-            if pid == 0 {
-                return false;
+            let established_comms = root_ops::establish_comms_with_service_unix(&app_cache_dir);
+            if !established_comms.is_null() {
+                let mut metadata = SERVICE.lock().unwrap();
+                metadata.pipe_in = unsafe { RawPtr((*established_comms).pipe_in) };
+                metadata.pipe_out = unsafe { RawPtr((*established_comms).pipe_out) };
+                let pid: i32 = std::fs::read_to_string(app_cache_dir)
+                    .unwrap_or_default()
+                    .lines()
+                    .next()
+                    .unwrap_or("")
+                    .trim()
+                    .parse()
+                    .unwrap_or(0);
+                if pid == 0 {
+                    return false;
+                }
+                metadata.pid = pid;
+                metadata.running = true;
+                true
+            } else {
+                false
             }
-            metadata.pid = pid;
-            metadata.running = true;
-            true
         }
     } else {
         false
